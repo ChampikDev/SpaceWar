@@ -14,11 +14,13 @@ pygame.font.init()
 pygame.mixer.init()
 
 # creating screen
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+display = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+screen = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT)).convert()
 pygame.display.set_caption("Space War")
 
 # initializing the assets
 bg = pygame.image.load("assets/bg.jpg").convert()
+bg = pygame.transform.scale(bg, (SCREEN_WIDTH, SCREEN_HEIGHT))
 player_image = pygame.image.load('assets/spaceship1.png').convert_alpha()
 player_image = pygame.transform.scale(player_image, (PLAYER_WIDTH, PLAYER_HEIGHT))
 enemy_image = pygame.image.load('assets/enemy.png').convert_alpha()
@@ -45,8 +47,22 @@ tiles = math.ceil(SCREEN_HEIGHT / bg_height) + 1
 
 FONT = pygame.font.SysFont("comicsans", 30)
 
+def present_screen():
+    display_width, display_height = display.get_size()
+    scale = min(display_width / SCREEN_WIDTH, display_height / SCREEN_HEIGHT)
+    scaled_width = int(SCREEN_WIDTH * scale)
+    scaled_height = int(SCREEN_HEIGHT * scale)
+    scaled_screen = pygame.transform.smoothscale(screen, (scaled_width, scaled_height))
+    x = (display_width - scaled_width) // 2
+    y = (display_height - scaled_height) // 2
+
+    display.fill("black")
+    display.blit(scaled_screen, (x, y))
+    pygame.display.flip()
+
 # def draw(player, elapsed_time, stars, scroll):
 def draw(all_sprites, elapsed_time, score, scroll, lives):
+    screen.fill("black")
 
     # draw scrolling background 
     for i in range(0, tiles):
@@ -57,22 +73,22 @@ def draw(all_sprites, elapsed_time, score, scroll, lives):
     screen.blit(timeText, (10, 10))
 
     scoreText = FONT.render(f"Score: {score}", 1, "white")
-    screen.blit(scoreText, (660, 10))
+    screen.blit(scoreText, (SCREEN_WIDTH - scoreText.get_width() - 10, 10))
 
     livesText = FONT.render(f"Lives: {lives}", 1, "white")
-    screen.blit(livesText, (670, 60))
+    screen.blit(livesText, (SCREEN_WIDTH - livesText.get_width() - 10, 60))
 
     # draw sprites
     all_sprites.draw(screen)
 
-    pygame.display.flip()
+    present_screen()
 
 def game_over():
     pygame.mixer.music.stop()
     game_over_sound.play()
     lost_text = FONT.render("You lost!", 1, "white")
     screen.blit(lost_text, (SCREEN_WIDTH/2 - lost_text.get_width()/2, SCREEN_HEIGHT/2 - lost_text.get_height()/2))
-    pygame.display.update()
+    present_screen()
     pygame.time.delay(GAME_OVER_DELAY)
 
 
@@ -123,6 +139,9 @@ def main():
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                running = False
+                break
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 running = False
                 break
          
